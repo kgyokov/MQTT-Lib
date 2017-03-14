@@ -3,7 +3,7 @@
 -behaviour(supervisor).
 
 %% API
--export([start_link/0, start_listener/4]).
+-export([start_link/0, start_listener/4, stop_listener/1]).
 
 %% Supervisor callbacks
 -export([init/1]).
@@ -32,6 +32,13 @@ start_listener(Transport, TransOpts, ConnMod, ProtoOpts) ->
     tcp -> {ok,_} = ranch:start_listener(mqtt_tcp, NbAcceptors, Transport, TransOpts, mqttl_ranch_sup, TcpProtoOpts);
     _ -> error(protocol_not_implemented)
   end.
+
+stop_listener(Transport) ->
+  Ref = case Transport of
+          tcp -> mqtt_tcp;
+          _ -> error(protocol_not_implemented)
+        end,
+  ranch:stop_listener(Ref).
 
 %% ===================================================================
 %% Supervisor callbacks
