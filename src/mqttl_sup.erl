@@ -27,9 +27,9 @@ start_listener(Transport, TransOpts, ConnMod, ProtoOpts) ->
     %% @todo: Maybe inject this another way
     {conn_mod,ConnMod}
   ],
-  NbAcceptors = proplists:get_value(acceptors,ProtoOpts,10000),
+  NbAcceptors = proplists:get_value(acceptors,ProtoOpts,1000),
   case Transport of
-    tcp -> {ok,_} = ranch:start_listener(mqtt_tcp, NbAcceptors, Transport, TransOpts, mqttl_ranch_sup, TcpProtoOpts);
+    tcp -> {ok,_} = ranch:start_listener(mqtt_tcp, NbAcceptors, ranch_tcp, TransOpts, mqttl_ranch_sup, TcpProtoOpts);
     _ -> error(protocol_not_implemented)
   end.
 
