@@ -17,12 +17,12 @@
 -callback new_link(Transport::tcp,Socket:: any(),Opts::any()) -> {ok,pid()}.
 
 %%todo: Maybe just have the receiver quit let the mqttl_conn process be killed?
--callback unexpected_disconnect(Details::any()) -> ok.
+-callback unexpected_disconnect(Pid::any(),Details::any()) -> ok.
 
 %%todo: Maybe just have the receive quit and let the mqttl_conn process be killed?
--callback bad_packet(Reason::any()) -> ok.
+-callback bad_packet(Pid,Reason::any()) -> ok.
 
--callback handle_packet(NewPacket::mqttl_packet()) -> ok.
+-callback handle_packet(Pid,NewPacket::mqttl_packet()) -> ok.
 %%
 %%
 %%-author("Kalin").

@@ -161,13 +161,13 @@ handle_info({tcp_closed, Socket}, S = #state{conn_pid = ConnPid,
                                              conn_mod = ConnMod,
                                              socket = Socket}) ->
     ConnMod:unexpected_disconnect(ConnPid,closed),
-    {stop, normal, S};
+    {stop, tcp_closed, S};
 
 handle_info({tcp_error, Socket, Reason},  S = #state{conn_pid = ConnPid,
                                                      conn_mod = ConnMod,
                                                      socket = Socket}) ->
     ConnMod:unexpected_disconnect(ConnPid,Reason),
-    {stop, normal, S};
+    {stop, tcp_error, S};
 
 handle_info(_Info, State) ->
     {noreply, State}.

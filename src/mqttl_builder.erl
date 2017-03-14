@@ -9,7 +9,7 @@
 -module(mqttl_builder).
 -author("Kalin").
 
--define(FLAG(Flag), (case Flag of true -> 1; false -> 0 end):1).
+-define(FLAG(Flag), (<<(case Flag of true -> 1; false -> 0 end):1>>)).
 
 -include("mqttl_packets.hrl").
 -include("mqttl_parsing.hrl").
@@ -28,7 +28,7 @@ build_flags(Packet) ->
         #'UNSUBSCRIBE'{}    ->  <<2#0010:4>>;
         #'PUBREL'{}         ->  <<2#0010:4>>;
         #'PUBLISH' { qos = QoS, dup = Dup, retain = Retain } ->
-            <<?FLAG(Dup),QoS:2,?FLAG(Retain)>>;
+            <<(flag(Dup))/bits,QoS:2,(flag(Retain))/bits>>;
         _ -> <<0:4>>
     end.
 
@@ -77,10 +77,10 @@ build_rest(#'CONNECT'{
     (case WillDetails of
          undefined -> <<0:4>>;
          #will_details{retain = WillRetain,qos = WillQos} ->
-             <<?FLAG(WillRetain),WillQos:2,1:1>>
+             <<(flag(WillRetain))/bits,WillQos:2,1:1>>
      end)/bits,
 
-    (maybe_flag(CleanSession))/bits,
+    (flag(CleanSession))/bits,
     0:1, %Reserved
 
     KeepAlive:16,
@@ -215,6 +215,10 @@ build_var_length(Length,Acc)->
         0 -> <<Acc/binary,0:1,Length:7>>;
         _ -> build_var_length(NextLength, <<Acc/binary,1:1,Length:7>>)
     end.
+
+
+flag(false)   ->    <<0:1>>;
+flag(_)       ->    <<1:1>>.
 
 maybe_flag(undefined)   ->    <<0:1>>;
 maybe_flag(_)           ->    <<1:1>>.
