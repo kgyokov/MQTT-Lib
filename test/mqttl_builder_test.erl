@@ -12,7 +12,7 @@
 -module(mqttl_builder_test).
 -author("Kalin").
 
--include("mqtt_packets.hrl").
+-include("mqttl_packets.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 -define(TEST_MODULE, mqttl_builder).
