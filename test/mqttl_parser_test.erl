@@ -10,8 +10,8 @@
 -author("Kalin").
 
 -include_lib("eunit/include/eunit.hrl").
--include("mqtt_parsing.hrl").
--include("mqtt_packets.hrl").
+-include("mqttl_parsing.hrl").
+-include("mqttl_packets.hrl").
 
 
 -compile([exportall]).
@@ -24,7 +24,7 @@ parse_string_test()->
     String = <<9:16,"123456789">>,
     ReadFun = fun(_) -> {ok, String } end,
     State = #parse_state { buffer = <<>>, readfun = ReadFun, max_buffer_size = 1000000 },
-    ?assertEqual({ok, <<"123456789">>, <<>>}, mqtt_parser:parse_string(State)).
+    ?assertEqual({ok, <<"123456789">>, <<>>}, mqttl_parser:parse_string(State)).
 
 parse_string_chunked_test()->
     ParseProcess = initialize_parse_process(<<>>, fun mqttl_parser:parse_string/1),
@@ -113,7 +113,7 @@ parse_Large_Packet_test() ->
     },
     Binary = mqttl_builder:build_packet(OriginalPacket),
     S = #parse_state{buffer = Binary, max_buffer_size = 5},
-    ?assertMatch({error, buffer_overflow}, mqtt_parser:parse_packet(S)).
+    ?assertMatch({error, buffer_overflow}, mqttl_parser:parse_packet(S)).
 
 %% ------------------------------------------------------
 %% CONNECT
@@ -448,7 +448,7 @@ parse_incomplete_packet_test() ->
 test_packet(OriginalPacket) ->
     Binary = mqttl_builder:build_packet(OriginalPacket),
     S = #parse_state{buffer = Binary, max_buffer_size = 10000000, readfun = undefined},
-    ?assertMatch({ok, OriginalPacket,_S1}, mqtt_parser:parse_packet(S)).
+    ?assertMatch({ok, OriginalPacket,_S1}, mqttl_parser:parse_packet(S)).
 
 test_binary_packet_for_error(Binary) ->
     S = #parse_state{buffer = Binary, max_buffer_size = 10000000, readfun = undefined},

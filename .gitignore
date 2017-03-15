@@ -14,3 +14,4 @@ Mnesia.nonode@nohost/
 MnesiaCore.nonode*
 Mnesia.test_node*
 mnesia_console/
+out/*
