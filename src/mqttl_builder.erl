@@ -9,7 +9,7 @@
 -module(mqttl_builder).
 -author("Kalin").
 
--define(FLAG(Flag), (<<(case Flag of true -> 1; false -> 0 end):1>>)).
+-define(FLAG(Flag), (case Flag of true -> 1; false -> 0 end):1).
 
 -include("mqttl_packets.hrl").
 -include("mqttl_parsing.hrl").
@@ -28,7 +28,7 @@ build_flags(Packet) ->
         #'UNSUBSCRIBE'{}    ->  <<2#0010:4>>;
         #'PUBREL'{}         ->  <<2#0010:4>>;
         #'PUBLISH' { qos = QoS, dup = Dup, retain = Retain } ->
-            <<(flag(Dup))/bits,QoS:2,(flag(Retain))/bits>>;
+            <<?FLAG(Dup),QoS:2,?FLAG(Retain)>>;
         _ -> <<0:4>>
     end.
 
@@ -77,10 +77,10 @@ build_rest(#'CONNECT'{
     (case WillDetails of
          undefined -> <<0:4>>;
          #will_details{retain = WillRetain,qos = WillQos} ->
-             <<(flag(WillRetain))/bits,WillQos:2,1:1>>
+             <<?FLAG(WillRetain),WillQos:2,1:1>>
      end)/bits,
 
-    (flag(CleanSession))/bits,
+    ?FLAG(CleanSession),
     0:1, %Reserved
 
     KeepAlive:16,
@@ -217,8 +217,6 @@ build_var_length(Length,Acc)->
     end.
 
 
-flag(false)   ->    <<0:1>>;
-flag(_)       ->    <<1:1>>.
 
 maybe_flag(undefined)   ->    <<0:1>>;
 maybe_flag(_)           ->    <<1:1>>.
