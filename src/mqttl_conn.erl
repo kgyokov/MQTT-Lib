@@ -20,9 +20,9 @@
 -callback unexpected_disconnect(Pid::any(),Details::any()) -> ok.
 
 %%todo: Maybe just have the receive quit and let the mqttl_conn process be killed?
--callback bad_packet(Pid,Reason::any()) -> ok.
+-callback bad_packet(Pid::pid(),Reason::any()) -> ok.
 
--callback handle_packet(Pid,NewPacket::mqttl_packet()) -> ok.
+-callback handle_packet(Pid::pid(),NewPacket::mqttl_packet()) -> ok.
 %%
 %%
 %%-author("Kalin").
