@@ -11,10 +11,10 @@
 -behaviour(mqttl_auth).
 
 %% API
--export([authenticate/4, authorize/3]).
+-export([connect/2, subscribe/2, publish/2]).
 
-authenticate(_Configuration, _ClientId, _Username, _Password) ->
-    {ok, default}.
+connect(_Configuration,_Packet) -> {ok, default}.
 
-authorize(default, _Action, _Resource) ->
-    ok.
+subscribe(_, _AuthCtx) -> ok.
+
+publish(_Topic, _AuthCtx) -> ok.

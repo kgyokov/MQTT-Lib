@@ -9,17 +9,15 @@
 -module(mqttl_auth).
 -author("Kalin").
 
--callback authenticate(
-    Configuration::any(),
-    ClientId::binary(),
-    Username::binary(),
-    Password::binary()
-)->
-    {ok, AuthCtx::any()} |     %% AuthCtx can contain things like claims, etc.
-    {error,Reason::bad_credentials | any()}.     %% error, e.g. invalid password
+-include("mqttl_packets.hrl").
 
--callback authorize(
-    AuthCtx::any(),
-    Action::atom(),
-    Resource::any()
-)-> ok | {error,Reason::any()}.
+-callback connect(Configuration::any(),Packet::#'CONNECT'{}) ->
+    {ok, AuthCtx::any()}     %% AuthCtx can contain things like claims, etc.
+    |{error,Reason::bad_credentials | any()}.     %% error, e.g. invalid password
+
+-callback subscribe({Filter::any(),QoS::qos()},AuthCtx::any()) ->
+    ok | {error,Reason::any()}.
+
+-callback publish(Topic,AuthCtx) ->
+    ok | {error,Reason::any()}.
+

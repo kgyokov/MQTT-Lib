@@ -9,6 +9,8 @@
 -module(mqttl_claims_auth).
 -author("Kalin").
 
+-include("mqttl_packets.hrl").
+
 -behaviour(mqttl_auth).
 
 -type claims_dict() :: any().
@@ -16,49 +18,42 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
--export([authenticate/4, authorize/3]).
+-export([connect/2, subscribe/2, publish/2]).
 
--spec authenticate([{ClaimsGenerator::module(),Options::any()}],
-                   binary(), binary(), binary()) ->
-                      claims_dict() | {error, any()}.
-authenticate(Configuration, ClientId, Username, Password) ->
+
+connect(Configuration,#'CONNECT'{client_id = ClientId,username = Username, password = Password}) ->
     try
         [case ClaimsGenerator:get_claims(Options,ClientId,Username,Password) of
-            {ok,Claims}     ->  Claims;
-            {error,Reason}  ->  throw({auth_error,Reason});
-            not_applicable  ->  []
+             {ok,Claims}     ->  Claims;
+             {error,Reason}  ->  throw({auth_error,Reason})
          end
             || {ClaimsGenerator,Options} <- Configuration
         ] of ClaimsLists ->
-        acc_all_claims(ClaimsLists)
+        lists:foldl(fun merge_claims/2,{[],[]},ClaimsLists)
     catch
         throw:{auth_error,Reason}   ->
             {error,Reason}
     end.
 
--spec authorize(claims_dict(), any(), any()) -> ok | {error,any()}.
-authorize(AuthCtx, Action, Resource) ->
-    case is_covered_by_claim(AuthCtx, Action, Resource) of
-        true    ->  ok;
-        false   ->  {error,unauthroized}
+subscribe(NewSub, {_,Sub}) ->
+    authorize(NewSub,Sub).
+
+publish(TandQoS, {Pub}) ->
+    authorize(TandQoS,Pub).
+
+authorize(FandQoS, {_,Sub}) ->
+    case lists:any(fun(S) -> mqttl_topic:is_covered_by(FandQoS,S) end, Sub) of
+        true  -> ok;
+        false -> {error,unauthroized}
     end.
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
 
-acc_all_claims(ClaimsLists) ->
-    AllClaims = lists:concat(ClaimsLists),
-    lists:foldl(
-        fun({ClaimType,ClaimVal},Dict)-> dict:append_list(ClaimType,ClaimVal,Dict) end,
-        dict:new(), AllClaims
-    ).
+merge_claims({Pub1,Sub1},{Pub2,Sub2}) ->
+    {mqttl_topic:min_cover(Pub1++Pub2),
+     mqttl_topic:min_cover(Sub1++Sub2)}.
 
 
-is_covered_by_claim(AuthCtx,ClaimType,Topic) ->
-    case dict:find(ClaimType,AuthCtx) of
-        {ok,Claims} ->
-            lists:any(fun(ClaimVal)-> mqttl_topic:is_covered_by(Topic,ClaimVal) end,Claims);
-        error ->
-            false
-    end.
+
