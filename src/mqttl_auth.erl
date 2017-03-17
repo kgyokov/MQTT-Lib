@@ -18,6 +18,6 @@
 -callback subscribe({Filter::any(),QoS::qos()},AuthCtx::any()) ->
     ok | {error,Reason::any()}.
 
--callback publish(Topic,AuthCtx) ->
+-callback publish({Topic::any(),Qos::qos()},AuthCtx::any()) ->
     ok | {error,Reason::any()}.
 
