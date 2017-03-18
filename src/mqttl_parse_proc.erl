@@ -22,7 +22,7 @@ start_link(ConnPid,ConnMod,Opts) ->
   {ok,spawn_link(fun() -> start_loop(ConnPid,ConnMod,Opts) end)}.
 
 start_loop(ConnPid,ConnMod,Opts) ->
-  #{buffer_size := BufferSize} = Opts,
+  BufferSize = maps:get(buffer_size,Opts,128000),
   %% calback for the parser process to get new data
   ReadFun =
     fun(ExpectedSize) ->
