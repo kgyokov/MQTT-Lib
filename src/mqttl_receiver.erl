@@ -135,12 +135,6 @@ handle_info({'EXIT',ParserPid, Reason},S = #state{conn_mod = ConnMod,
     ConnMod:unexpected_disconnect(ConnPid,Reason),
     {stop, normal, S};
 
-handle_info({'EXIT',ConnPid, Reason}, S = #state{conn_mod = ConnMod,
-                                                 conn_pid = ConnPid}) ->
-    ConnMod:unexpected_disconnect(ConnPid,Reason),
-    {stop, normal, S};
-
-
 handle_info({async_init,Ref,Opts},S = #state{transport = Transport,
                                              socket = Socket,
                                              conn_mod = ConnMod}) ->
