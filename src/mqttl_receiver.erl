@@ -138,11 +138,12 @@ handle_info({'EXIT',ParserPid, Reason},S = #state{conn_mod = ConnMod,
 handle_info({async_init,Ref,Opts},S = #state{transport = Transport,
                                              socket = Socket,
                                              conn_mod = ConnMod}) ->
-    {ok,ConnPid} = ConnMod:new_link(Transport,Socket,Opts),
+    ConnOpts = proplists:get_value(conn_opts,Opts,[]),
+    {ok,ConnPid} = ConnMod:new_link(Transport,Socket,ConnOpts),
     error_logger:info_msg("Connection Process ~p started",[ConnPid]),
     ok = ranch:accept_ack(Ref),
     ok = Transport:setopts(Socket, [{active, once}]),
-    {ok,ParserPid} = mqttl_parse_proc:start_link(ConnPid,ConnMod,Opts),
+    {ok,ParserPid} = mqttl_parse_proc:start_link(ConnPid,ConnMod,ConnOpts),
     {noreply, S#state{conn_pid = ConnPid,
                       parser_pid = ParserPid}};
 
