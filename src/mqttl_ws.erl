@@ -10,6 +10,8 @@
 -module(mqttl_ws).
 -author("Kalin").
 
+-include("mqttl_packets.hrl").
+
 %% API
 -export([init/3, websocket_init/3, send/2, websocket_info/3, websocket_handle/3]).
 
@@ -17,7 +19,7 @@
   opts,
   conn_mod    ::module(),
   conn_pid    ::pid(),
-  buffer      ::
+  parser_pid  ::pid()
 }).
 
 %%% ======================================================================
@@ -41,7 +43,10 @@ websocket_init(_Type, Req, Opts) ->
     {ok,Req1} ->
       {_, ConnMod} = lists:keyfind(conn_mod, 1, Opts),
       {ok,ConnPid} = ConnMod:new_link(?MODULE,self(),Opts),
-      {ok, Req1, #state{conn_mod = ConnMod,conn_pid = ConnPid}}
+      {ok,ParserPid} = mqttl_parse_proc:start_link(ConnPid,ConnMod,Opts),
+      {ok,Req1,#state{conn_mod = ConnMod,
+                      conn_pid = ConnPid,
+                      parser_pid = ParserPid}}
   end.
 
 validate_sec_protocol(Req) ->
@@ -58,41 +63,14 @@ validate_sec_protocol(Req) ->
       end
   end.
 
-websocket_handle({binary,Frame}, Req, S = #state{conn_mod = ConnMod,
-                                                 conn_pid = ConnPid,
-                                                 buffer = Buffer}) ->
-  {Packets,Buffer1} = handle_binary_frame(Frame,Buffer),
-  Parsed = [mqttl_parser:parse_packet(P) || P <- Packets],
-  Errors = [Reason || {error,Reason} <- Parsed],
-  case Errors of
-    [] ->
-      [ConnMod:handle_packet(ConnPid,P) ||P <- Parsed],
-      {ok, Req, S#state{buffer = Buffer1}};
-    [Reason|_] ->
-      handle_error(ConnPid,ConnMod,Reason),
-      {shutdown,Req}
-  end;
+websocket_handle({binary,Frame}, Req, S = #state{parser_pid = ParserPid}) ->
+  ParserPid ! {data,Frame},
+  {ok, Req, S};
 
 
-websocket_handle(_Frame, _Req, S = #state{conn_mod = ConnMod,conn_pid = ConnPid}) ->
-  handle_error(ConnPid,ConnMod,malformed_packet).
-
-
-handle_error(ConnPid, ConnMod, Reason) ->
-  case Reason of
-    invalid_flags ->
-      ConnMod:bad_packet(ConnPid,invalid_flags);
-    malformed_packet ->
-      ConnMod:bad_packet(ConnPid,undefined);
-    {unexpected_disconnect,Details} ->
-      ConnMod:unexpected_disconnect(ConnPid,Details)
-    %% @todo: More errors
-  end.
-
-
-handle_binary_frame(Frame,idle) -> ok;
-handle_binary_frame(Frame,{Current,Expecting}) -> ok.
-
+websocket_handle(_Frame, Req, #state{conn_mod = ConnMod,conn_pid = ConnPid}) ->
+  ConnMod:bad_packet(ConnPid,undefined),
+  {shutdown,Req}.
 
 websocket_info({packet,Packet}, Req, State) ->
   {reply, {binary, mqttl_builder:build_packet(Packet)}, Req, State}.
