@@ -42,8 +42,9 @@ websocket_init(_Type, Req, Opts) ->
     error -> {shutdown, Req};
     {ok,Req1} ->
       {_, ConnMod} = lists:keyfind(conn_mod, 1, Opts),
-      {ok,ConnPid} = ConnMod:new_link(?MODULE,self(),Opts),
-      {ok,ParserPid} = mqttl_parse_proc:start_link(ConnPid,ConnMod,Opts),
+      ConnOpts = proplists:get_value(conn_opts,Opts,#{}),
+      {ok,ConnPid} = ConnMod:new_link(?MODULE,self(),ConnOpts),
+      {ok,ParserPid} = mqttl_parse_proc:start_link(ConnPid,ConnMod,ConnOpts),
       {ok,Req1,#state{conn_mod = ConnMod,
                       conn_pid = ConnPid,
                       parser_pid = ParserPid}}

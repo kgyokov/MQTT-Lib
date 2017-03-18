@@ -138,7 +138,7 @@ handle_info({'EXIT',ParserPid, Reason},S = #state{conn_mod = ConnMod,
 handle_info({async_init,Ref,Opts},S = #state{transport = Transport,
                                              socket = Socket,
                                              conn_mod = ConnMod}) ->
-    ConnOpts = proplists:get_value(conn_opts,Opts,[]),
+    ConnOpts = proplists:get_value(conn_opts,Opts,#{}),
     {ok,ConnPid} = ConnMod:new_link(Transport,Socket,ConnOpts),
     error_logger:info_msg("Connection Process ~p started",[ConnPid]),
     ok = ranch:accept_ack(Ref),

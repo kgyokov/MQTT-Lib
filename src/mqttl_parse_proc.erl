@@ -21,8 +21,8 @@
 start_link(ConnPid,ConnMod,Opts) ->
   {ok,spawn_link(fun() -> start_loop(ConnPid,ConnMod,Opts) end)}.
 
-start_loop(ConnPid,ConnMod, Opts) ->
-  BufferSize = proplists:get_value(buffer_size,Opts,128000),
+start_loop(ConnPid,ConnMod,Opts) ->
+  #{buffer_size := BufferSize} = Opts,
   %% calback for the parser process to get new data
   ReadFun =
     fun(ExpectedSize) ->
