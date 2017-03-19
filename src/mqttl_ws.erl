@@ -13,7 +13,7 @@
 -include("mqttl_packets.hrl").
 
 %% API
--export([init/3, websocket_init/3, send/2, websocket_info/3, websocket_handle/3]).
+-export([init/3, websocket_init/3, send/2, websocket_info/3, websocket_handle/3, websocket_terminate/3]).
 
 -record(state,{
   opts,
@@ -73,5 +73,11 @@ websocket_handle(_Frame, Req, #state{conn_mod = ConnMod,conn_pid = ConnPid}) ->
   ConnMod:bad_packet(ConnPid,undefined),
   {shutdown,Req}.
 
-websocket_info({packet,Packet}, Req, State) ->
-  {reply, {binary, mqttl_builder:build_packet(Packet)}, Req, State}.
+websocket_info({packet,Packet}, Req, S) ->
+  {reply, {binary, Packet}, Req, S};
+
+websocket_info(_Msg,Req,S) ->
+  {ok,Req,S}.
+
+websocket_terminate(_Reason,_Req,_S) ->
+  ok.
