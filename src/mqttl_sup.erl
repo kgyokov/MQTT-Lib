@@ -76,6 +76,6 @@ to_cowboy_opts(InjProtoOpts) -> dispatch(InjProtoOpts).
 dispatch(InjProtoOpts) ->
   Dispatch = cowboy_router:compile([
     %% {HostMatch, list({PathMatch, Handler, Opts})}
-    {'_', [{'/mqtt/ws', mqttl_ws, InjProtoOpts}]}
+    {'_', [{"/mqtt", mqttl_ws, InjProtoOpts}]}
   ]),
   [{env, [{dispatch, Dispatch}]}|InjProtoOpts].
