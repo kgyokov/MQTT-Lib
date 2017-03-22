@@ -55,7 +55,7 @@ validate_sec_protocol(Req) ->
     {ok, undefined, _} ->
       {ok, Req};
     {ok, SubProts, Req2} ->
-      case lists:keymember(<<"mqtt">>, 1, SubProts) of
+      case lists:any(fun(El) -> El =:= <<"mqtt">> end,SubProts) of
         true ->
           Req3 = cowboy_req:set_resp_header(<<"sec-websocket-protocol">>,<<"mqtt">>,Req2),
           {ok, Req3};
