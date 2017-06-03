@@ -17,10 +17,10 @@
 -export([build_packet/1, build_string/1, build_var_length/1]).
 
 build_packet(Packet) ->
-    Rest = build_rest(Packet),
+    Rest = list_to_binary([build_rest(Packet)]),
     <<(build_packet_type(Packet)):4,(build_flags(Packet))/bits,
-    (build_var_length(byte_size(Rest)))/binary,
-    Rest/binary>>.
+       (build_var_length(byte_size(Rest)))/binary,
+        Rest/binary>>.
 
 build_flags(Packet) ->
     case Packet of
@@ -137,17 +137,10 @@ build_rest(#'PUBLISH'{
     Content/binary>>;
 
 
-build_rest(#'PUBACK'{packet_id = PacketId})->
-    <<PacketId:16>>;
-
-build_rest(#'PUBREC'{packet_id = PacketId})->
-    <<PacketId:16>>;
-
-build_rest(#'PUBREL'{packet_id = PacketId})->
-    <<PacketId:16>>;
-
-build_rest(#'PUBCOMP'{packet_id = PacketId})->
-    <<PacketId:16>>;
+build_rest(#'PUBACK'{packet_id = PacketId})-> <<PacketId:16>>;
+build_rest(#'PUBREC'{packet_id = PacketId})-> <<PacketId:16>>;
+build_rest(#'PUBREL'{packet_id = PacketId})-> <<PacketId:16>>;
+build_rest(#'PUBCOMP'{packet_id = PacketId})-> <<PacketId:16>>;
 
 %%% @todo: maybe build binaries more efficiently than lists:map)
 
@@ -155,23 +148,20 @@ build_rest(#'PUBCOMP'{packet_id = PacketId})->
 %% Subscriptions
 %%--------------------------------------------------------
 build_rest(#'SUBSCRIBE'{packet_id = PacketId, subscriptions = Subscriptions})->
-    <<
-    PacketId:16,
-    (list_to_binary(lists:map(fun({Topic,QoS})-> <<(build_string(Topic))/binary,0:6,QoS:2>> end, Subscriptions)))/binary
-    >>;
+    [<<PacketId:16>> |
+        [[build_string(Topic),<<0:6,QoS:2>>] || {Topic,QoS} <- Subscriptions]
+    ];
 
 build_rest(#'SUBACK'{packet_id = PacketId, return_codes = ReturnCodes})->
-    <<
-    PacketId:16,
-    (list_to_binary(lists:map(fun(Code)-> <<Code:8>> end, ReturnCodes)))/binary
-    >>;
+    [<<PacketId:16>> |
+        [<<Code:8>> || Code <- ReturnCodes]
+    ];
 
 
 build_rest(#'UNSUBSCRIBE'{packet_id = PacketId, topic_filters = TopicFilters})->
-    <<
-    PacketId:16,
-    (list_to_binary(lists:map(fun build_string/1, TopicFilters)))/binary
-    >>;
+    [<<PacketId:16>> |
+        [build_string(Filter) || Filter <- TopicFilters]
+    ];
 
 build_rest(#'UNSUBACK'{packet_id = PacketId}) ->
     <<PacketId:16>>;
@@ -179,17 +169,12 @@ build_rest(#'UNSUBACK'{packet_id = PacketId}) ->
 %%--------------------------------------------------------
 %% PING
 %%--------------------------------------------------------
-build_rest(#'PINGREQ'{})  ->
-    <<>>;
-
-build_rest(#'PINGRESP'{}) ->
-    <<>>;
-
+build_rest(#'PINGREQ'{})  -> <<>>;
+build_rest(#'PINGRESP'{}) -> <<>>;
 %%--------------------------------------------------------
 %% Misc
 %%--------------------------------------------------------
-build_rest(#'DISCONNECT'{}) ->
-    <<>>.
+build_rest(#'DISCONNECT'{}) -> <<>>.
 
 
 %%=========================================================
