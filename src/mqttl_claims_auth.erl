@@ -19,9 +19,9 @@
 -export([connect/2, subscribe/2, publish/2]).
 
 
-connect(Configuration,#'CONNECT'{client_id = ClientId,username = Username, password = Password}) ->
+connect(Configuration,#'CONNECT'{client_id = ClientId,username = U, password = P}) ->
     try
-        [case ClaimsGenerator:get_claims(Options,ClientId,Username,Password) of
+        [case ClaimsGenerator:get_claims(Options,ClientId,U,P) of
              {ok,Claims}     ->  Claims;
              {error,Reason}  ->  throw({auth_error,Reason})
          end
@@ -33,11 +33,9 @@ connect(Configuration,#'CONNECT'{client_id = ClientId,username = Username, passw
             {error,Reason}
     end.
 
-subscribe(NewSub, {_,Sub}) ->
-    authorize(NewSub,Sub).
+subscribe(NewSub, {_,Sub}) -> authorize(NewSub,Sub).
 
-publish(TandQoS, {Pub}) ->
-    authorize(TandQoS,Pub).
+publish(TandQoS, {Pub}) -> authorize(TandQoS,Pub).
 
 authorize(FandQoS, {_,Sub}) ->
     case lists:any(fun(S) -> mqttl_topic:is_covered_by(FandQoS,S) end, Sub) of

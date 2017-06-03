@@ -22,26 +22,20 @@ start_link(ConnPid,ConnMod,Opts) ->
   {ok,spawn_link(fun() -> start_loop(ConnPid,ConnMod,Opts) end)}.
 
 start_loop(ConnPid,ConnMod,Opts) ->
-  BufferSize = maps:get(buffer_size,Opts,128000),
-  %% calback for the parser process to get new data
-  ReadFun =
-    fun(ExpectedSize) ->
-      receive_data(ExpectedSize)
-    end,
-
-  ParseState = #parse_state{
+  MaxBuffer = maps:get(buffer_size,Opts,128000),
+  S = #parse_state{
     buffer = <<>>,
-    max_buffer_size = BufferSize,
-    readfun =  ReadFun
+    max_buffer_size = MaxBuffer,
+    readfun = fun recv/1
   },
-  loop_over_socket(ConnPid,ConnMod,ParseState).
+  loop(ConnPid,ConnMod,S).
 
-loop_over_socket(ConnPid,ConnMod,ParseState) ->
-  case mqttl_parser:parse_packet(ParseState) of
-    {ok, NewPacket,NewParseState} ->
-      error_logger:info_msg("processing packet ~p~n", [NewPacket]),
-      ConnMod:handle_packet(ConnPid,NewPacket),
-      loop_over_socket(ConnPid,ConnMod,NewParseState);
+loop(ConnPid,ConnMod,S) ->
+  case mqttl_parser:parse_packet(S) of
+    {ok, P1,S1} ->
+      error_logger:info_msg("processing packet ~p~n", [P1]),
+      ConnMod:handle_packet(ConnPid,P1),
+      loop(ConnPid,ConnMod,S1);
     {error,Reason} ->
       error_logger:info_msg("Parse error ~p~n", [Reason]),
       handle_error(ConnPid,ConnMod,Reason)
@@ -59,22 +53,22 @@ handle_error(ConnPid, ConnMod, Reason) ->
   end.
 
 %% callback for parser process
-receive_data(MinExpected) ->
-  receive_data(MinExpected,<<>>).
+recv(MinExpected) ->
+  recv(MinExpected,<<>>).
 
-receive_data(0,Acc) ->
+recv(0,Acc) ->
   receive
     {data,Data} ->
       {ok,<<Acc/binary,Data/binary>>};
     _ -> exit(normal)
   end;
 
-receive_data(MinExpected,Acc) when byte_size(Acc) >= MinExpected ->
+recv(MinExpected,Acc) when byte_size(Acc) >= MinExpected ->
   {ok,Acc};
 
-receive_data(MinExpected,Acc) ->
+recv(MinExpected,Acc) ->
   receive
     {data,Data} ->
-      receive_data(MinExpected,<<Acc/binary,Data/binary>>);
+      recv(MinExpected,<<Acc/binary,Data/binary>>);
     _ -> exit(normal)
   end.

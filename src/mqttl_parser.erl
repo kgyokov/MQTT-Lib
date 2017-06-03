@@ -61,7 +61,7 @@ read(S = #parse_state{max_buffer_size = MaxBufferSize, buffer = Buffer, readfun 
 
 %%[MQTT-1.5.3]
 parse_string(#parse_state{buffer = <<0:16,Rest/binary>>}) ->
-    {ok, <<"">>,Rest};  %% empty string
+    {ok, <<>>,Rest};  %% empty string
 
 parse_string(#parse_state{buffer = <<StrLen:16,Str:StrLen/bytes,Rest/binary>>}) ->
     {ok,Str,Rest};
@@ -70,7 +70,7 @@ parse_string(S = #parse_state{})-> %
     parse_string(read(S)); %% fallthrough case: not enough data in the buffer
 
 parse_string(<<0:16,Rest/binary>>) ->
-    {ok, <<>>,Rest}; %% empty string
+    {ok,<<>>,Rest}; %% empty string
 
 parse_string(<<StrLen:16,Str:StrLen/bytes,Rest/binary>>) ->
     {ok,Str,Rest};
@@ -226,7 +226,7 @@ parse_specific_type(?PUBCOMP, <<0:4>>,#parse_state{buffer = <<PacketId:16>>}) ->
 %% ========================================================
 
 parse_specific_type(?SUBSCRIBE, <<2:4>>, #parse_state{buffer = <<PacketId:16, Rest/binary>>}) ->
-    Subscriptions = lists:reverse(parse_topic_subscriptions(Rest)),
+    Subscriptions = lists:reverse(parse_subs(Rest)),
     #'SUBSCRIBE'{
         packet_id = PacketId,
         subscriptions = Subscriptions
@@ -257,14 +257,9 @@ parse_specific_type(_Type,_Flags,_State) ->
 %% Parse helpers
 %% ========================================================
 
-parse_codes(Buffer) ->
-    parse_codes(Buffer,[]).
-
-parse_codes(<<>>, Codes) ->
-    Codes;
-
-parse_codes(<<Code:8,Rest/binary>>,Codes) ->
-    parse_codes(Rest,[Code|Codes]).
+parse_codes(Buffer) -> parse_codes(Buffer,[]).
+parse_codes(<<>>, Codes) -> Codes;
+parse_codes(<<Code:8,Rest/binary>>,Codes) -> parse_codes(Rest,[Code|Codes]).
 
 parse_topics(Buffer) ->
     parse_topics(Buffer,[]).
@@ -275,20 +270,20 @@ parse_topics(_Buffer = <<>>,Topics) ->
 parse_topics(<<TopicLen:16,Topic:TopicLen/bytes,Rest/binary>>,Topics) ->
     parse_topics(Rest,[Topic|Topics]).
 
-parse_topic_subscriptions(Buffer) ->
-    parse_topic_subscriptions(Buffer,[]).
+parse_subs(Buffer) ->
+    parse_subs(Buffer,[]).
 
-parse_topic_subscriptions(_Buffer = <<>>,[]) ->
+parse_subs(_Buffer = <<>>,[]) ->
     throw({error,protocol_violation});
 
-parse_topic_subscriptions(_Buffer = <<>>,Subscriptions) ->
+parse_subs(_Buffer = <<>>,Subscriptions) ->
     Subscriptions;
 
-parse_topic_subscriptions(<<TopicLen:16,Topic:TopicLen/bytes,0:6,QoS:2,Rest/binary>>,
+parse_subs(<<TopicLen:16,Topic:TopicLen/bytes,0:6,QoS:2,Rest/binary>>,
     Subscriptions) when QoS =<2 ->
-    parse_topic_subscriptions(Rest,[{Topic,QoS}|Subscriptions]);
+    parse_subs(Rest,[{Topic,QoS}|Subscriptions]);
 
-parse_topic_subscriptions(_Buffer, _Subscriptions) ->
+parse_subs(_Buffer, _Subscriptions) ->
     throw({error,malformed_packet}).
 
 %% If the Will Flag is set to 0, then the Will QoS MUST be set to 0 (0x00) [MQTT-3.1.2-13]
