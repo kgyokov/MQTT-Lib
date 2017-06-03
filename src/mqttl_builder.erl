@@ -100,7 +100,7 @@ build_rest(#'CONNECT'{
 %%--------------------------------------------------------
 %% CONNACK
 %%--------------------------------------------------------
-build_rest(#'CONNACK'{ session_present = SessionPresent, return_code = ReturnCode})->
+build_rest(#'CONNACK'{session_present = SessionPresent, return_code = ReturnCode})->
     <<
     0:7,
     (case ReturnCode of
@@ -198,10 +198,8 @@ build_var_length(Length,Acc)->
     NextLength = Length bsr 7,
     case NextLength of
         0 -> <<Acc/binary,0:1,Length:7>>;
-        _ -> build_var_length(NextLength, <<Acc/binary,1:1,Length:7>>)
+        _ -> build_var_length(NextLength,<<Acc/binary,1:1,Length:7>>)
     end.
-
-
 
 maybe_flag(undefined)   ->    <<0:1>>;
 maybe_flag(_)           ->    <<1:1>>.
