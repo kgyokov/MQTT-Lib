@@ -16,8 +16,8 @@
     |{error,Reason::bad_credentials | any()}.     %% error, e.g. invalid password
 
 -callback subscribe({Filter::any(),QoS::qos()},AuthCtx::any()) ->
-    ok | {error,Reason::any()}.
+    {ok, ActualQoS::qos()|?SUBSCRIPTION_FAILURE} | {error,Reason::any()}.
 
 -callback publish({Topic::any(),Qos::qos()},AuthCtx::any()) ->
-    ok | {error,Reason::any()}.
+    {ok, ActualQoS::qos()} | {error,Reason::any()}.
 

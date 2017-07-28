@@ -15,6 +15,6 @@
 
 connect(_Configuration,_Packet) -> {ok, default}.
 
-subscribe(_, _AuthCtx) -> ok.
+subscribe(QoS, default) -> QoS.
 
-publish(_Topic, _AuthCtx) -> ok.
+publish(_Topic, default) -> ok.
