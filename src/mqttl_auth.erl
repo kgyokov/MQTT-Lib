@@ -11,8 +11,8 @@
 
 -include("mqttl_packets.hrl").
 
--callback connect(Configuration::any(),Packet::#'CONNECT'{}) ->
-    {ok, AuthCtx::any()}     %% AuthCtx can contain things like claims, etc.
+-callback connect(Packet::#'CONNECT'{}) ->
+    {ok, NewPacket::#'CONNECT'{}, AuthCtx::any()}     %% AuthCtx can contain things like claims, etc.
     |{error,Reason::bad_credentials | any()}.     %% error, e.g. invalid password
 
 -callback subscribe({Filter::any(),QoS::qos()},AuthCtx::any()) ->

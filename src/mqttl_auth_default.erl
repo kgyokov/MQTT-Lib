@@ -11,9 +11,9 @@
 -behaviour(mqttl_auth).
 
 %% API
--export([connect/2, subscribe/2, publish/2]).
+-export([connect/1, subscribe/2, publish/2]).
 
-connect(_Configuration,_Packet) -> {ok, default}.
+connect(Packet) -> {ok,Packet,default}.
 
 subscribe(QoS, default) -> QoS.
 
